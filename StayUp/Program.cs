@@ -63,7 +63,7 @@ namespace StayUp
 		/// <summary>
 		/// Version number
 		/// </summary>
-		const string	kVersion				= "1.1.0.6";
+		const string	kVersion				= "1.1.0.7";
 		
 		#endregion
 		#region Static members
@@ -137,7 +137,17 @@ namespace StayUp
 		/// Flags whether help message has been displayed
 		/// </summary>
 		private static bool		sWroteHelpMessage		= false;
-		
+
+
+		/// <summary>
+		/// Delay for relaunch
+		/// </summary>
+		private static Timer sRelaunchDelayTimer;
+
+		/// <summary>
+		/// Time between launches
+		/// </summary>
+		private static int sRelaunchDelay;
 		#endregion
 		#region External
 
@@ -316,7 +326,14 @@ namespace StayUp
 						} else {
 							WriteHelp();
 						}
-
+                    } else if ( args[ i ] == "-d" ) {
+					    ++i;
+					    double timeout = 0.0;
+					    if ( i < args.Length && double.TryParse( args[ i ], out timeout ) ) {
+					        sRelaunchDelay = (int) (timeout * 1000.0);
+					    } else {
+						    WriteHelp();
+					    }
 					} else {
 						WriteHelp();
 					}	
@@ -331,8 +348,8 @@ namespace StayUp
 				Environment.Exit( 1 );
 				return;
 			}
-			Console.ReadLine();
-			
+		    while (Console.ReadKey(true).Key != ConsoleKey.Escape) {}
+
 		}
 
 		/// <summary>
@@ -367,8 +384,10 @@ namespace StayUp
 				Console.WriteLine( "                in seconds. Default is 3600." );
 				Console.WriteLine( "         -t     Time to wait for a process to respond before forcing it" );
 				Console.WriteLine( "                to restart, in seconds. Default is 5." );
+				Console.WriteLine( "         -d     Time to wait between launches in seconds");
+				Console.WriteLine( "                Default is 0.");
 				Console.WriteLine( "" );
-				Console.WriteLine( "Example: StayUp MyApp.exe -e -i 3600 -t 5" );
+				Console.WriteLine( "Example: StayUp MyApp.exe -e -i 3600 -t 5 -d 5" );
 			}
 		}
 		
@@ -408,7 +427,17 @@ namespace StayUp
 					">> Exit time:    " + DateTime.Now.ToString() + "\n" +
 					GetInfoString(), EventLogEntryType.Error );
 			}
-			Launch();
+
+		    if (sRelaunchDelay > 0)
+		    {
+		        Log("Waiting " + sRelaunchDelay/1000 + "s until relaunch.\nPress ESC to quit");
+		        TimeSpan delay = TimeSpan.FromMilliseconds((double) sRelaunchDelay);
+		        sRelaunchDelayTimer = new Timer(new TimerCallback(RelaunchTimerHandler), null, delay, TimeSpan.FromMilliseconds(-1));
+		    }
+		    else
+		    {
+		        Launch();
+		    }
 		}
 
 		/// <summary>
@@ -423,6 +452,15 @@ namespace StayUp
 			Log( "Process information:\n" + GetInfoString() );
 		}
 
+		/// <summary>
+		/// Timer called after relaunch delay has elapsed
+		/// </summary>
+		/// <param name="sender"></param>
+		private static void RelaunchTimerHandler(object sender)
+		{
+			sRelaunchDelayTimer.Dispose();
+			Launch();
+		}
 		/// <summary>
 		/// Main application callback
 		/// </summary>

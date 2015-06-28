@@ -8,8 +8,10 @@ Usage:   StayUp [process] -e -i [interval] -t [timeout]
                 in seconds. Default is 3600.
          -t     Time to wait for a process to respond before forcing it
                 to restart, in seconds. Default is 5.
+		 -d     Time to wait between launches in seconds
+                Default is 0.
 
-Example: StayUp MyApp.exe -e -i 3600 -t 5
+Example: StayUp MyApp.exe -e -i 3600 -t 5 -d 10
 
 When event log is enabled, information and errors are recorded logged and 
 viewable in Windows' Event Viewer. Open the Event Viewer and go to 
@@ -17,7 +19,7 @@ viewable in Windows' Event Viewer. Open the Event Viewer and go to
 
 -----------------------------------------
 
-Version 1.1.0.5
+Version 1.1.0.7
 
 -----------------------------------------
 
